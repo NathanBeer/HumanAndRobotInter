@@ -1,20 +1,20 @@
 import threading
-import pyttsx3
+import os
+import time
 import RobotSeeing
 import RobotHearing
 import RobotMovement
 import RobotNavigator
 
-# Initialize TTS engine
-engine = pyttsx3.init()
-engine.setProperty('rate', 150) # Speed of speech
-
 def speak_async(text):
-    """Speaks text in a background thread so the robot stays responsive."""
+    """Speaks text using gTTS and plays via mpg123 in a background thread."""
     def run_speak():
-        engine.say(text)
-        engine.runAndWait()
-    # Daemon thread ensures it closes when the program exits
+        # gtts-cli generates the audio, mpg123 plays it instantly
+        # -q flag is for 'quiet' mode to avoid console clutter
+        cmd = f"gtts-cli '{text}' | mpg123 -q -"
+        os.system(cmd)
+    
+    # Daemon thread ensures the audio thread closes when the main program exits
     threading.Thread(target=run_speak, daemon=True).start()
 
 def run_robot():
@@ -44,7 +44,6 @@ def run_robot():
                 speak_async(f"I found the {target}. Moving towards it.")
                 RobotMovement.move_forward(speed=50)
                 # Keep moving briefly then stop
-                import time
                 time.sleep(1.5)
                 RobotMovement.safe_stop()
                 speak_async("I have arrived.")
